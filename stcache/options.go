@@ -15,7 +15,8 @@ type options struct {
 func NewOptions() *options {
 	opts := &options{}
 
-	// 本节点监听的http地址
+	// node1
+	//// 本节点监听的http地址
 	var httpAddress = flag.String("http", ":6002", "Http address")
 	// 本节点用于raft之间通信的地址
 	var raftTCPAddress = flag.String("raft", "127.0.0.1:7001", "raft tcp address")
@@ -27,6 +28,21 @@ func NewOptions() *options {
 	//var joinAddress = flag.String("join", "127.0.0.1:6001", "join address for raft cluster")
 	// 本节点需要加入的远程节点（主节点？）的地址
 	var joinAddress = flag.String("join", "", "join address for raft cluster")
+
+	// node 2
+	// 本节点监听的http地址
+	//var httpAddress = flag.String("http", ":6003", "Http address")
+	//// 本节点用于raft之间通信的地址
+	//var raftTCPAddress = flag.String("raft", "127.0.0.1:7002", "raft tcp address")
+	//// var raftTCPAddress = flag.String("raft", "", "raft tcp address")
+	//// 本节点的节点名字
+	//var node = flag.String("node", "node2", "raft node name")
+	//// 是否以leader节点启动
+	//var bootstrap = flag.Bool("bootstrap", false, "start as raft cluster")
+	////var joinAddress = flag.String("join", "127.0.0.1:6001", "join address for raft cluster")
+	//// 本节点需要加入的远程节点（主节点？）的地址
+	//var joinAddress = flag.String("join", "127.0.0.1:7001", "join address for raft cluster")
+
 	flag.Parse()
 
 	opts.dataDir = "./" + *node
