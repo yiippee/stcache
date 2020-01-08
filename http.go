@@ -45,6 +45,22 @@ func NewHttpServer(ctx *stCachedContext, log *log.Logger) *httpServer {
 	mux.HandleFunc("/get", s.doGet)
 	mux.HandleFunc("/join", s.doJoin)
 	mux.HandleFunc("/list", s.list)
+	mux.HandleFunc("/remove", s.remove)
+	mux.HandleFunc("/leader", func(w http.ResponseWriter, r *http.Request) {
+		leader := s.ctx.st.raft.raft.Leader()
+		fmt.Fprint(w, leader)
+	})
+
+	mux.HandleFunc("/config", func(w http.ResponseWriter, r *http.Request) {
+		config := s.ctx.st.raft.raft.GetConfiguration()
+		if err := config.Error(); err != nil {
+			s.log.Printf("raft get config failed:%v", err)
+			fmt.Fprint(w, "internal error\n")
+			return
+		}
+		fmt.Println(config.Configuration().Servers)
+		fmt.Fprint(w, config.Configuration().Servers)
+	})
 	return s
 }
 
@@ -60,6 +76,17 @@ func (h *httpServer) setWriteFlag(flag bool) {
 	}
 }
 
+func (h *httpServer) remove(w http.ResponseWriter, r *http.Request) {
+	ServerAddress := r.URL.Query().Get("address")
+	removeFuture := h.ctx.st.raft.raft.RemoveServer(raft.ServerID(ServerAddress), 0, 0)
+	// Apply 返回一个future，一个future代表一个已经完成或者未完成的操作
+	// 判定future的状态，确定执行的最终结果
+	if err := removeFuture.Error(); err != nil {
+		h.log.Printf("raft.Remove failed:%v", err)
+		fmt.Fprint(w, "internal error\n")
+		return
+	}
+}
 func (h *httpServer) list(w http.ResponseWriter, r *http.Request) {
 	for k, v := range h.ctx.st.cm.data {
 		fmt.Fprintf(w, "%s : %s\n", k, v)

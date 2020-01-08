@@ -23,10 +23,12 @@ args="${args} --node=${node}"
 
 if [ "${is_master}" == 1 ] ; then
     args="${args} --bootstrap true"
-else
+elif [ "${is_master}" == 2 ]; then
     args="${args} --join=127.0.0.1:6000"
+else
+    args="${args}"  # 只启动不加入，也是可以的
 fi
 
 echo${args}
-./stcached ${args}
+./stcache ${args}
 

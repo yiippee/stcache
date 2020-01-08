@@ -39,8 +39,10 @@ func newRaftNode(opts *options, ctx *stCachedContext) (*raftNodeInfo, error) {
 	raftConfig := raft.DefaultConfig()                      // 直接使用raft默认的配置
 	raftConfig.LocalID = raft.ServerID(opts.raftTCPAddress) // 用监听的地址来作为节点的id
 	// raftConfig.Logger = hclog.New(os.Stderr, "raft: ", log.Ldate|log.Ltime)
-	raftConfig.SnapshotInterval = 20 * time.Second // 每间隔多久生成一次快照,这里是20s
-	raftConfig.SnapshotThreshold = 2               // 每commit多少log entry后生成一次快照,这里是2条
+	// 因为snapshot创建是有代价的，因此，这个频率不能太高，在示例应用中，每更新10000条日志才会进行一次snapshot创建。
+	raftConfig.SnapshotInterval = 500 * time.Second // 每间隔多久生成一次快照,这里是20s
+	// 因为snapshot创建是有代价的，因此，这个频率不能太高，在示例应用中，每更新10000条日志才会进行一次snapshot创建。
+	raftConfig.SnapshotThreshold = 100 // 每commit多少log entry后生成一次快照,这里是2条
 	leaderNotifyCh := make(chan bool, 1)
 	raftConfig.NotifyCh = leaderNotifyCh
 
@@ -127,4 +129,7 @@ func joinRaftCluster(opts *options) error {
 	}
 
 	return nil
+}
+
+type Cluster struct {
 }
