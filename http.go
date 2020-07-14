@@ -122,7 +122,8 @@ func (h *httpServer) doSet(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "param error\n")
 		return
 	}
-
+	// 上层应用所有的操作，最终都会序列化成logEntry来传播给follower，follower也是
+	// 通过logEntry来获取操作信息，并更新本地的信息
 	event := logEntryData{Key: key, Value: value}
 	eventBytes, err := json.Marshal(event)
 	if err != nil {
@@ -135,9 +136,13 @@ func (h *httpServer) doSet(w http.ResponseWriter, r *http.Request) {
 	//  这里面会根据raft的内部协议，在各个节点之间进行通信协作，
 	//  确保最后这条log 会在整个集群的节点里面提交或者失败。
 
+	// deprecated
 	// 对follower节点来说，leader会通知它来commit log entry，
 	// 被commit的log entry需要调用应用层提供的Apply方法来执行日志，
 	// 这里就是从logEntry拿到具体的数据，然后写入缓存里面即可。
+
+	// 这里不是直接写缓存，而是调用调用raft的Apply方法来应用这条信息
+	// 只有leader才会触发这个方法，对于folloer来说，raft会主动回调fsm中的Apply方法来处理leader同步的日志信息
 	applyFuture := h.ctx.st.raft.raft.Apply(eventBytes, 5*time.Second) // 5s 会不会严重影响程序的响应时间啊？应该不会，反正休眠时不占cpu
 	// Apply 返回一个future，一个future代表一个已经完成或者未完成的操作
 	// 判定future的状态，确定执行的最终结果

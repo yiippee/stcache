@@ -29,6 +29,8 @@ type logEntryData struct {
 
 // 如果这条日志被一半以上的follew成功的复制，领导人就应用这条日志到自己的状态机（就是下面的Apply函数，将log entry作用到本地状态机）中，并返回给客户端。
 // 所以需要用户自己实现fsm啊。如果 follower 宕机或者运行缓慢或者丢包，领导人会不断的重试（会永远重试吗？），直到所有的 follower 最终都存储了所有的日志条目。
+
+// 节点重启以后，加载快照数据也会调用这个函数来更新应用信息
 func (f *FSM) Apply(logEntry *raft.Log) interface{} {
 	e := logEntryData{}
 	if err := json.Unmarshal(logEntry.Data, &e); err != nil {
@@ -40,7 +42,7 @@ func (f *FSM) Apply(logEntry *raft.Log) interface{} {
 }
 
 // Snapshot returns a latest snapshot
-// 生成一个快照结构
+// 生成一个快照结构。快照的作用就是对已有的数据进行备份一次，那么之前的所有日志都可以删除了
 func (f *FSM) Snapshot() (raft.FSMSnapshot, error) {
 	return &snapshot{cm: f.ctx.st.cm}, nil
 }
