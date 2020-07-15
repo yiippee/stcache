@@ -26,7 +26,7 @@ if [ "${is_master}" == 1 ] ; then
 elif [ "${is_master}" == 2 ]; then
     args="${args} --join=127.0.0.1:6000"
 else
-    args="${args}"  # 只启动不加入，也是可以的
+    args="${args}"  # 只启动不加入，也是可以的，因为可能不知道leader是谁
 fi
 
 echo${args}

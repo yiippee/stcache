@@ -43,6 +43,8 @@ func newRaftNode(opts *options, ctx *stCachedContext) (*raftNodeInfo, error) {
 	raftConfig.SnapshotInterval = 10 * time.Second // 每间隔多久生成一次快照,这里是20s
 	// 因为snapshot创建是有代价的，因此，这个频率不能太高，在示例应用中，每更新10000条日志才会进行一次snapshot创建。
 	raftConfig.SnapshotThreshold = 5 // 每commit多少log entry后生成一次快照,这里是2条
+	raftConfig.TrailingLogs = 0      // 执行一次快照之后，需要保留多少日志。 这样我们就可以快速地在追随者上重放日志，而不是被迫发送整个快照。
+
 	leaderNotifyCh := make(chan bool, 1)
 	raftConfig.NotifyCh = leaderNotifyCh
 

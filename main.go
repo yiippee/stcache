@@ -52,7 +52,7 @@ func main() {
 	if st.opts.joinAddress != "" {
 		err = joinRaftCluster(st.opts)
 		if err != nil {
-			st.log.Fatal(fmt.Sprintf("join raft cluster failed:%v", err))
+			st.log.Println(fmt.Sprintf("join raft cluster failed:%v, but start up alone.", err))
 		}
 	}
 

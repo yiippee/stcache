@@ -8,6 +8,12 @@ import (
 	"github.com/hashicorp/raft"
 )
 
+/*
+The log stores are indeed unrelated to the FSM.
+The FSM only applies committed entries, the store persists also entries that haven't been committed yet (because they are currently reaching a quorum).
+The FSM should typically do only in-memory operations, yes.  FSM只管内存操作，与log存储毫无关系。
+As said, at startup hashicorp's implementation will use the latest available snapshot, to reduce the overhead of rebuilding the FSM .
+*/
 type FSM struct {
 	ctx *stCachedContext
 	log *log.Logger
@@ -34,6 +40,7 @@ type logEntryData struct {
 func (f *FSM) Apply(logEntry *raft.Log) interface{} {
 	e := logEntryData{}
 	if err := json.Unmarshal(logEntry.Data, &e); err != nil {
+		// 应用一条日志是不能有任何错误的，唯一的可能是内存不足，这个时候应该panic，日志存储不应该与FSM应用程序逻辑有任何关系
 		panic("Failed unmarshaling Raft log entry. This is a bug.")
 	}
 	ret := f.ctx.st.cm.Set(e.Key, e.Value)
@@ -50,7 +57,7 @@ func (f *FSM) Snapshot() (raft.FSMSnapshot, error) {
 // Restore stores the key-value store to a previous state.
 // 根据快照恢复数据
 // 服务重启的时候，会先读取本地的快照来恢复数据，
-// 在FSM里面定义的Restore函数会被调用，这里我们就简单的对数据解析json反序列化然后写入内存即可
+// 在FSM里面定义的Restore函数会被调用，这里我们就简单的对数据解析json反序列化然后写入内存即可。  folloer重启的时候也是先读快照，再加上leader发送过来的最新的log
 func (f *FSM) Restore(serialized io.ReadCloser) error {
 	return f.ctx.st.cm.UnMarshal(serialized)
 }
