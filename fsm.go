@@ -9,6 +9,16 @@ import (
 )
 
 /*
+
+日志、FSM执行过程：
+1，leader收到命令，立刻将命令写入本地日志中；
+2，向其他follower发送该日志条目；
+3，收到半数以上的follower响应后，就将该日志标识为已提交，并将该日志发往本地的FSM执行，执行完毕后返回结果给客户端；
+4，通过后续的通知follower哪些日志条目已经提交，以便follower在自己的fsm中执行日志。
+
+*/
+
+/*
 The log stores are indeed unrelated to the FSM.
 The FSM only applies committed entries, the store persists also entries that haven't been committed yet (because they are currently reaching a quorum).
 The FSM should typically do only in-memory operations, yes.  FSM只管内存操作，与log存储毫无关系。
