@@ -143,9 +143,11 @@ func (h *httpServer) doSet(w http.ResponseWriter, r *http.Request) {
 
 	// 这里不是直接写缓存，而是调用调用raft的Apply方法来应用这条信息
 	// 只有leader才会触发这个方法，对于folloer来说，raft会主动回调fsm中的Apply方法来处理leader同步的日志信息
+	// Apply执行过程:leader先写log，类似wal，然后将日志条目发给follower，只要一半以上回复了，则提交这条日志，Apply立刻返回并回复客户端，
+	// 应用FSM是异步的。FSM与log是区分开的，
 	applyFuture := h.ctx.st.raft.raft.Apply(eventBytes, 5*time.Second) // 5s 会不会严重影响程序的响应时间啊？应该不会，反正休眠时不占cpu
 	// Apply 返回一个future，一个future代表一个已经完成或者未完成的操作
-	// 判定future的状态，确定执行的最终结果
+	// 判定future的状态，确定执行的最终结果。
 	if err := applyFuture.Error(); err != nil {
 		h.log.Printf("raft.Apply failed:%v", err)
 		fmt.Fprint(w, "internal error\n")

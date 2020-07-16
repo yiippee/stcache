@@ -14,6 +14,8 @@ import (
 1，leader收到命令，立刻将命令写入本地日志中；
 2，向其他follower发送该日志条目；
 3，收到半数以上的follower响应后，就将该日志标识为已提交，并将该日志发往本地的FSM执行，执行完毕后返回结果给客户端；
+4，只要日志写入了本地，则如果半数没有响应，或者说本地执行FSM失败（其实不可能失败），则只要恢复，则还是会继续执行 runFSM，一直在跑，直到commited
+       有个 lastApplied 来记录着最后已经提交的日志id，那么所有大于这个编号的则视为未提交，会重新提交。编号是永远自增的
 4，通过后续的通知follower哪些日志条目已经提交，以便follower在自己的fsm中执行日志。
 
 */
@@ -24,6 +26,11 @@ The FSM only applies committed entries, the store persists also entries that hav
 The FSM should typically do only in-memory operations, yes.  FSM只管内存操作，与log存储毫无关系。
 As said, at startup hashicorp's implementation will use the latest available snapshot, to reduce the overhead of rebuilding the FSM .
 */
+/*
+raft本身也维护了一个状态，包括当前的任期term，已经提交的最大的日志index，最后应用于FSM的日志index，最后执行快照的index和term，
+最后的日志index和term。 定义在raftState中。这些信息是非常重要的，明确描述了当前状态。
+*/
+
 type FSM struct {
 	ctx *stCachedContext
 	log *log.Logger
